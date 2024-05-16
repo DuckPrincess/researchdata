@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Researcher Directory</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+    <style>
+        /* CSS to center align and increase font size */
+        
+        #search-results span {
+            display: block;
+            text-align: center;
+            font-size: 1.5em;
+        }
+        
+        .wrapper {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+        
+        .container-fluid {
+            flex: 1;
+        }
+        
+        body {
+            font-family: 'Kanit', sans-serif;
+            /* Set Kanit as the default font */
+            background-color: #ebf2fa;
+            /* Background color */
+        }
+        /* CSS to center align the navbar */
+        
+        .navbar {
+            margin-left: auto;
+            margin-right: auto;
+            background-color: #064789 !important;
+        }
+        
+        footer {
+            background-color: #064789;
+            /* Footer background color */
+            color: white;
+            /* Text color */
+            padding: 5px 0;
+            /* Padding */
+            text-align: center;
+            /* Center align text */
+        }
+        
+        .table-striped>tbody>tr:nth-child(2n+1)>td,
+        .table-striped>tbody>tr:nth-child(2n+1)>th {
+            background-color: #427aa1;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app" class="wrapper">
+        <div class="container-fluid">
+            <nav class="navbar navbar-dark bg-light">
+                <div class="container-fluid">
+                    <a class="navbar-brand d-flex align-items-center" href="#">
+                        <img src="https://www.rama.mahidol.ac.th/rama_hospital/sites/default/files/LogoRama2Website236X192_0.png" alt="" width="70" height="57" class="d-inline-block align-text-top p-1"> คณะแพทยศาสตร์โรงพยาบาลรามาธิบดี
+                    </a>
+                </div>
+            </nav>
+            <div class="row">
+                <div class="col">
+                    <h1 class="text-center"><strong style="color:black;">ทำเนียบนักวิจัย</strong></h1>
+                    <center>
+                        <div>
+                            <div class="form-group mb-2">
+                                <label for="searchtext">กรุณาระบุ ชื่อ นามสกุล เพื่อตรวจสอบสถานะ</label>
+                            </div>
+
+                            <div class="col-md-6 mb-2">
+                                <input type="text" class="form-control" id="searchtext" name="searchtext" placeholder="กรุณากรอกชื่อนามสกุล เช่น สมศักดิ์ หมายมั่น">
+                            </div>
+
+                            <button id="search" type="submit" class="btn btn-success mb-2" style="background-color: #064789; border-color: #064789;" onclick="accessSpreadSheet()">ค้นหา</button>
+                            <span id="spinner" class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
+                        </div>
+                    </center>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col">
+                    <div id="search-results" class="table-responsive">
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Footer -->
+        <footer>
+            <pre>
+  คณะแพทยศาสตร์โรงพยาบาลรามาธิบดี มหาวิทยาลัยมหิดล
+  270 ถนนพระราม 6 แขวงทุ่งพญาไท เขตราชเทวี กรุงเทพฯ 10400
+      </pre>
+        </footer>
+    </div>
+
+    <script>
+        async function accessSpreadSheet() {
+            try {
+                // Clear previous search results
+                document.getElementById('search-results').innerHTML = '';
+                let url = 'https://api.sheety.co/554b690b1e6391a1457851b4f96dd9bd/researchCenter/data';
+                fetch(url)
+                    .then((response) => response.json())
+                    .then(json => {
+                        // console.log(json.data);
+                        let searchText = document.getElementById('searchtext').value.trim();
+                        let name, lastname;
+
+                        // Check if searchText is not empty and contains at least one space
+                        if (searchText && searchText.includes(' ')) {
+                            [name, lastname] = searchText.split(' ');
+                        } else {
+                            name = undefined;
+                            lastname = undefined;
+                        }
+                        let filteredData;
+                        if (name !== undefined && lastname !== undefined) {
+                            filteredData = json.data.filter(item => item['ชื่อ'] === name && item['นามสกุล'] === lastname);
+                        } else {
+                            filteredData = [];
+                        }
+                        // Do something with the data
+                        // console.log(filteredData);
+                        if (filteredData.length === 0) {
+                            // If empty, display a message
+                            document.getElementById('search-results').innerHTML = `
+            <div class="alert alert-warning text-center" role="alert">
+              No data found!
+            </div>
+          `;
+                            return;
+                        }
+
+                        // Extract keys from the first object to use as table headers
+                        let keys = Object.keys(filteredData[0]);
+
+                        // Generate HTML markup for table headers
+                        let tableHeaders = keys.map(key => `<th>${key}</th>`).join('');
+
+                        // Generate HTML markup for table rows
+                        let tableRows = filteredData.map(item => {
+                            let rowData = keys.map(key => `<td>${item[key]}</td>`).join('');
+                            return `<tr>${rowData}</tr>`;
+                        }).join('');
+
+                        // Inject the generated HTML markup into the search-results element
+                        document.getElementById('search-results').innerHTML = `
+          <table class="table table-striped">
+            <thead>
+              <tr>${tableHeaders}</tr>
+            </thead>
+            <tbody>
+              ${tableRows}
+            </tbody>
+          </table>
+        `;
+                    });
+            } catch (error) {
+                console.error('Error accessing Google Sheet:', error);
+            }
+        }
+    </script>
+
+</body>
+
+</html>
